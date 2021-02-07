@@ -1,7 +1,7 @@
 const BlockType = require('../../extension-support/block-type');
 const ArgumentType = require('../../extension-support/argument-type');
 
-
+//suppose the map is a scenograph of earth, then seeing from the middle of the map into the center of earth, the horizontal distance equals EARTH_RADIUS * Math.sin(longitude range), and the vertical distance equals EARTH_RADIUS * Math.sin(latitude range). At last, we need to replace EARTH_RADIUS with the coord range.
 class Scratch3ML4KUKMap {
 
     constructor() {
@@ -16,11 +16,17 @@ class Scratch3ML4KUKMap {
             lat : 50.094, lon : 1.4349
         };
 
-        this.TOP_LEFT_POS = this._latlonToGlobalCoords(this.TOP_LEFT.lat, this.TOP_LEFT.lon);
-        this.BOTTOM_RIGHT_POS = this._latlonToGlobalCoords(this.BOTTOM_RIGHT.lat, this.BOTTOM_RIGHT.lon);
+	this.MIDDLE = {
+		mapCoordsX: (this.TOP_LEFT.mapCoordsX + this.BOTTOM_RIGHT.mapCoordsX)/2.0, 
+		mapCoordsY: (this.TOP_LEFT.mapCoordsY + this.BOTTOM_RIGHT.mapCoordsY)/2.0, 
+		lat: (this.TOP_LEFT.lat + this.BOTTOM_RIGHT.lat)/2.0, 
+		lon: (this.TOP_LEFT.lon + this.BOTTOM_RIGHT.lon)/2.0
+	};
 
-        this.X_RANGE = this.BOTTOM_RIGHT_POS.x - this.TOP_LEFT_POS.x;
-        this.Y_RANGE = this.BOTTOM_RIGHT_POS.y - this.TOP_LEFT_POS.y;
+	this.LAT_RANGE = Math.sin(this.BOTTOM_RIGHT.lat - this.TOP_LEFT.lat);
+	this.LON_RANGE = Math.sin(this.TOP_LEFT.lon - this.BOTTOM_RIGHT.lon);
+        this.X_RANGE = this.BOTTOM_RIGHT.mapCoordsX - this.TOP_LEFT.mapCoordsX;
+        this.Y_RANGE = this.BOTTOM_RIGHT.mapCoordsY - this.TOP_LEFT.mapCoordsY;
     }
 
 
@@ -72,30 +78,11 @@ class Scratch3ML4KUKMap {
         return this._latlonToMapCoords(parseFloat(args.LATITUDE, 10), parseFloat(args.LONGITUDE, 10)).y;
     }
 
-
-
-
-    _latlonToGlobalCoords (lat, lon){
-        return {
-            x : this.EARTH_RADIUS * lon * Math.cos((this.TOP_LEFT.lat + this.BOTTOM_RIGHT.lat) / 2),
-            y : this.EARTH_RADIUS * lat
-        };
-    }
-
-
     _latlonToMapCoords (lat, lon){
-        const pos = this._latlonToGlobalCoords(lat, lon);
-
-        const percentX = ((pos.x - this.TOP_LEFT_POS.x) / this.X_RANGE);
-        const percentY = ((pos.y - this.TOP_LEFT_POS.y) / this.Y_RANGE);
-
-        const mapDistanceX = this.BOTTOM_RIGHT.mapCoordsX - this.TOP_LEFT.mapCoordsX;
-        const mapDistanceY = this.BOTTOM_RIGHT.mapCoordsY - this.TOP_LEFT.mapCoordsY;
-
-        return {
-            x: this.TOP_LEFT.mapCoordsX + mapDistanceX * percentX,
-            y: this.TOP_LEFT.mapCoordsY + mapDistanceY * percentY
-        };
+	return {
+		y : Math.sin(lat - this.MIDDLE.lat) / this.LAT_RANGE * this.Y_RANGE + this.MIDDLE.mapCoordsY,
+		x : Math.sin(lon - this.MIDDLE.lon) / this.LON_RANGE * this.X_RANGE + this.MIDDLE.mapCoordsX
+	};
     }
 }
 
